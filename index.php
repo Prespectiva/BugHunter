@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/config/database.php';
+require __DIR__ . '/auth.php';
+
+$me = requireLogin();   // закрытая страница: без входа — редирект на login.php
 
 header('Content-Type: text/html; charset=utf-8');
-
-function h(?string $s): string
-{
-    return htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
 
 try {
     $pdo = getPdo();
@@ -64,23 +61,15 @@ function renderTable(string $title, array $rows): void
     echo '</table>';
 }
 ?>
-<!doctype html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <title>BugHunter — таблицы</title>
-    <style>
-        body { font-family: sans-serif; margin: 2em; }
-        h1 { margin-bottom: .2em; }
-        h2 { margin-top: 1.5em; }
-        table { margin-top: .5em; }
-        th { background: #eee; text-align: left; }
-        td, th { font-size: 14px; vertical-align: top; }
-        .links a { margin-right: 1em; }
-    </style>
-</head>
-<body>
+<?php pageHeader('Таблицы'); ?>
     <h1>BugHunter</h1>
+    <div class="userbar">
+        <span>Вы вошли как <b><?= h($me['full_name']) ?></b> (<?= h($me['email']) ?>, <?= h($me['role']) ?>)</span>
+        <form method="POST" action="logout.php">
+            <input type="hidden" name="csrf" value="<?= h(csrfToken()) ?>">
+            <button type="submit">Выйти</button>
+        </form>
+    </div>
     <p class="links">
         <a href="index.php">Обновить</a>
         <a href="init_db.php">init_db.php</a>
@@ -92,5 +81,4 @@ function renderTable(string $title, array $rows): void
     renderTable('projects', $projects);
     renderTable('bugs', $bugs);
     ?>
-</body>
-</html>
+<?php pageFooter(); ?>
