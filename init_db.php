@@ -37,25 +37,33 @@ try {
             }
 
             $project = $pdo->prepare(
-                'INSERT INTO projects (code, name, lead_id) VALUES (?, ?, ?)'
+                'INSERT INTO projects (code, name, description, owner_id, lead_id) VALUES (?, ?, ?, ?, ?)'
             );
-            $project->execute(['BH',   'BugHunter',            4]);
-            $project->execute(['SITE', 'Сайт «Колледж.Банк»',  4]);
+            $project->execute(['BH',   'BugHunter',           'Система учёта дефектов', 4, 4]);
+            $project->execute(['SITE', 'Сайт «Колледж.Банк»', 'Сайт обмена помощью',    4, 4]);
 
             $bug = $pdo->prepare(
-                'INSERT INTO bugs (project_id, reporter_id, assignee_id, title, steps, severity, priority, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                'INSERT INTO bugs (project_id, author_id, assignee_id, title, description, steps,
+                                   expected_result, actual_result, priority, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             );
             $bug->execute([1, 2, 3,
                 'Ошибка 500 при входе с пустым паролем',
-                '1. Открыть страницу входа; 2. Ввести логин tester@bh.local; 3. Нажать «Войти» с пустым паролем',
-                'Critical', 'High', 'Assigned']);
+                'При пустом пароле возникает ошибка HTTP 500.',
+                "1. Открыть login.php\n2. Ввести логин tester@bh.local\n3. Нажать «Войти» с пустым паролем",
+                'Сообщение валидации «Введите пароль».',
+                'Uncaught PDOException / белый экран (500).',
+                'Critical', 'Open']);
             $bug->execute([1, 2, null,
                 'Поиск тикетов не учитывает регистр',
-                null, 'Minor', 'Medium', 'New']);
+                'Поиск по слову «Ошибка» не находит «ошибка».',
+                "1. Открыть список ошибок\n2. Ввести «ошибка» в поиск",
+                'Найдены записи в любом регистре.', 'Записи не найдены.',
+                'Medium', 'Open']);
             $bug->execute([2, 2, 3,
                 'Не открывается карточка публикации',
-                null, 'Major', 'High', 'In Progress']);
+                'При открытии публикации по ссылке страница пустая.', '', '', '',
+                'High', 'In Progress']);
 
             $pdo->commit();
             echo 'Добавлены тестовые данные.' . PHP_EOL;

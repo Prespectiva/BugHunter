@@ -5,7 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/auth.php';
 
 if (currentUser() !== null) {
-    redirect('index.php');
+    redirect('bugs.php');
 }
 
 $errors = [];
@@ -45,6 +45,7 @@ $roles = ['tester' => 'Тестировщик', 'developer' => 'Разработ
 
 pageHeader('Регистрация');
 ?>
+<div class="card">
 <h1>Регистрация</h1>
 <?php showErrors($errors); ?>
 <form class="auth" method="POST" action="register.php" novalidate>
@@ -66,4 +67,5 @@ pageHeader('Регистрация');
     <button type="submit">Зарегистрироваться</button>
 </form>
 <p>Уже есть аккаунт? <a href="login.php">Войти</a></p>
+</div>
 <?php pageFooter();

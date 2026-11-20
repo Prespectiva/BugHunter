@@ -23,11 +23,11 @@ try {
     )->fetchAll();
 
     $bugs = $pdo->query(
-        'SELECT b.bug_id, p.code AS project, b.title, b.severity, b.priority, b.status,
-                r.full_name AS reporter, COALESCE(a.full_name, \'—\') AS assignee, b.created_at
+        'SELECT b.bug_id, p.code AS project, b.title, b.priority, b.status,
+                r.full_name AS author, COALESCE(a.full_name, \'—\') AS assignee, b.created_at
          FROM bugs b
          JOIN projects p ON p.project_id = b.project_id
-         JOIN users r    ON r.user_id = b.reporter_id
+         JOIN users r    ON r.user_id = b.author_id
          LEFT JOIN users a ON a.user_id = b.assignee_id
          ORDER BY b.bug_id'
     )->fetchAll();
@@ -45,7 +45,7 @@ function renderTable(string $title, array $rows): void
         echo '<p><em>Нет данных</em></p>';
         return;
     }
-    echo '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse">';
+    echo '<table class="table">';
     echo '<tr>';
     foreach (array_keys($rows[0]) as $col) {
         echo '<th>' . h($col) . '</th>';
@@ -63,15 +63,7 @@ function renderTable(string $title, array $rows): void
 ?>
 <?php pageHeader('Таблицы'); ?>
     <h1>BugHunter</h1>
-    <div class="userbar">
-        <span>Вы вошли как <b><?= h($me['full_name']) ?></b> (<?= h($me['email']) ?>, <?= h($me['role']) ?>)</span>
-        <form method="POST" action="logout.php">
-            <input type="hidden" name="csrf" value="<?= h(csrfToken()) ?>">
-            <button type="submit">Выйти</button>
-        </form>
-    </div>
     <p class="links">
-        <a href="projects.php">Проекты</a>
         <a href="index.php">Обновить</a>
         <a href="init_db.php">init_db.php</a>
         <a href="check.php">check.php</a>

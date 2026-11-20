@@ -8,7 +8,7 @@ $me = requireLogin();
 $project = projectFromRequest();
 
 $stmt = getPdo()->prepare(
-    'SELECT bug_id, title, severity, priority, status FROM bugs WHERE project_id = ? ORDER BY bug_id'
+    'SELECT bug_id, title, priority, status FROM bugs WHERE project_id = ? ORDER BY bug_id'
 );
 $stmt->execute([$project['project_id']]);
 $bugs = $stmt->fetchAll();
@@ -21,7 +21,7 @@ pageHeader($project['name']);
     <?php if (canManage($me, $project)): ?><a href="project_edit.php?id=<?= (int) $project['project_id'] ?>">Изменить</a><?php endif; ?>
 </p>
 <?php showMessage(); ?>
-<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
+<table class="table">
     <tr><th>Автор</th><td><?= h($project['owner_name'] ?? '—') ?></td></tr>
     <tr><th>Создан</th><td><?= h($project['created_at']) ?></td></tr>
     <tr><th>Описание</th><td><?= nl2br(h($project['description'] !== '' ? $project['description'] : '—')) ?></td></tr>
@@ -32,13 +32,12 @@ pageHeader($project['name']);
 <?php if ($bugs === []): ?>
     <p><em>Дефектов нет.</em></p>
 <?php else: ?>
-<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
-    <tr><th>№</th><th>Заголовок</th><th>Серьёзность</th><th>Приоритет</th><th>Статус</th></tr>
+<table class="table">
+    <tr><th>№</th><th>Заголовок</th><th>Приоритет</th><th>Статус</th></tr>
     <?php foreach ($bugs as $b): ?>
     <tr>
         <td><?= h($project['code'] . '-' . $b['bug_id']) ?></td>
         <td><?= h($b['title']) ?></td>
-        <td><?= h($b['severity']) ?></td>
         <td><?= h($b['priority']) ?></td>
         <td><?= h($b['status']) ?></td>
     </tr>

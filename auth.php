@@ -87,9 +87,12 @@ function validateRegistration(string $name, string $email, string $password, str
     return $errors;
 }
 
-/** Шапка страницы. */
+/** Шапка страницы: стили и верхнее меню (для вошедшего пользователя). */
 function pageHeader(string $title): void
 {
+    $user = currentUser();
+    $page = basename($_SERVER['SCRIPT_NAME'] ?? '');
+    $active = static fn (string $prefix): string => str_starts_with($page, $prefix) ? ' class="active"' : '';
     ?>
 <!doctype html>
 <html lang="ru">
@@ -97,34 +100,33 @@ function pageHeader(string $title): void
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= h($title) ?> — BugHunter</title>
-    <style>
-        body { font-family: sans-serif; margin: 2em; }
-        h1 { margin-bottom: .2em; }
-        h2 { margin-top: 1.5em; }
-        table { margin-top: .5em; }
-        th { background: #eee; text-align: left; }
-        td, th { font-size: 14px; vertical-align: top; }
-        .links a { margin-right: 1em; }
-        form.auth { max-width: 360px; }
-        form.auth label { display: block; margin: .8em 0 .2em; }
-        form.auth input, form.auth select, form.auth textarea { width: 100%; padding: 6px; box-sizing: border-box; font: inherit; }
-        td.actions a { margin-right: .6em; }
-        td.actions form { display: inline; }
-        form.auth button { margin-top: 1em; padding: 8px 16px; }
-        .errors { color: #a40000; background: #fde8e8; padding: 8px 12px; max-width: 336px; }
-        .errors p { margin: 4px 0; }
-        .success { color: #135c13; background: #e6f6e6; padding: 8px 12px; max-width: 336px; }
-        .userbar { display: flex; gap: 1em; align-items: center; }
-        .userbar form { margin: 0; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<?php if ($user !== null): ?>
+<header class="topbar">
+    <a class="logo" href="bugs.php">Bug<span>Hunter</span></a>
+    <nav>
+        <a href="bugs.php"<?= $active('bug') ?>>Ошибки</a>
+        <a href="projects.php"<?= $active('project') ?>>Проекты</a>
+        <!-- Ссылка на "Таблицы" удалена -->
+    </nav>
+    <div class="me">
+        <span><?= h($user['full_name']) ?> · <?= h(roleTitle($user['role'])) ?></span>
+        <form method="POST" action="logout.php">
+            <input type="hidden" name="csrf" value="<?= h(csrfToken()) ?>">
+            <button type="submit" class="btn btn-light btn-sm">Выйти</button>
+        </form>
+    </div>
+</header>
+<?php endif; ?>
+<main class="container<?= $user === null ? ' narrow' : '' ?>">
 <?php
 }
 
 function pageFooter(): void
 {
-    echo "</body>\n</html>\n";
+    echo "</main>\n</body>\n</html>\n";
 }
 
 function showErrors(array $errors): void
@@ -137,4 +139,15 @@ function showErrors(array $errors): void
         echo '<p>' . h($err) . '</p>';
     }
     echo '</div>';
+}
+
+/** Название роли по-русски. */
+function roleTitle(string $role): string
+{
+    return [
+        'customer'  => 'Заказчик',
+        'tester'    => 'Тестировщик',
+        'developer' => 'Разработчик',
+        'admin'     => 'Администратор',
+    ][$role] ?? $role;
 }

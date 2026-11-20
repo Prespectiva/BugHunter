@@ -5,7 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/auth.php';
 
 if (currentUser() !== null) {
-    redirect('index.php');
+    redirect('bugs.php');
 }
 
 $errors = [];
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($user && password_verify($password, $user['password_hash'])) {
                 session_regenerate_id(true);               // новый ID сессии после входа
                 $_SESSION['user_id'] = (int) $user['user_id'];
-                redirect('index.php');
+                redirect('bugs.php');
             }
             // Одно сообщение на оба случая, чтобы не подсказывать, какой e-mail есть в базе
             $errors[] = 'Неверный e-mail или пароль.';
@@ -41,7 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 pageHeader('Вход');
 ?>
-<h1>Вход</h1>
+<div class="card">
+<h1>Bug<span style="color:#ff7a59">Hunter</span> · Вход</h1>
 <?php if ($flash): ?>
     <div class="success"><?= h($flash) ?></div>
 <?php endif; ?>
@@ -55,4 +56,5 @@ pageHeader('Вход');
     <button type="submit">Войти</button>
 </form>
 <p>Нет аккаунта? <a href="register.php">Зарегистрироваться</a></p>
+</div>
 <?php pageFooter();

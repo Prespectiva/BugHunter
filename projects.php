@@ -18,14 +18,13 @@ pageHeader('Проекты');
 ?>
 <h1>Проекты</h1>
 <p class="links">
-    <a href="index.php">Таблицы</a>
     <?php if (canCreate($me)): ?><a href="project_create.php">+ Новый проект</a><?php endif; ?>
 </p>
 <?php showMessage(); ?>
 <?php if ($projects === []): ?>
     <p><em>Проектов пока нет.</em></p>
 <?php else: ?>
-<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse">
+<table class="table">
     <tr><th>Код</th><th>Название</th><th>Автор</th><th>Дефектов</th><th>Действия</th></tr>
     <?php foreach ($projects as $p): ?>
     <tr>
@@ -40,7 +39,7 @@ pageHeader('Проекты');
                 <form method="POST" action="project_delete.php" onsubmit="return confirm('Удалить проект?')">
                     <input type="hidden" name="csrf" value="<?= h(csrfToken()) ?>">
                     <input type="hidden" name="id" value="<?= (int) $p['project_id'] ?>">
-                    <button type="submit">Удалить</button>
+                    <button type="submit" class="btn-danger btn-sm">Удалить</button>
                 </form>
             <?php endif; ?>
         </td>

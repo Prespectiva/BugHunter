@@ -20,12 +20,12 @@ try {
     echo 'foreign_keys = ' . $pdo->query('PRAGMA foreign_keys')->fetchColumn() . PHP_EOL . PHP_EOL;
 
     $sql = 'SELECT p.code || \'-\' || b.bug_id AS bug,
-                   b.title, b.severity, b.priority, b.status,
-                   r.full_name AS reporter,
+                   b.title, b.priority, b.status,
+                   r.full_name AS author,
                    COALESCE(a.full_name, \'—\') AS assignee
             FROM bugs b
             JOIN projects p ON p.project_id = b.project_id
-            JOIN users r    ON r.user_id = b.reporter_id
+            JOIN users r    ON r.user_id = b.author_id
             LEFT JOIN users a ON a.user_id = b.assignee_id
             WHERE b.status <> :closed
             ORDER BY b.bug_id';
@@ -39,7 +39,7 @@ try {
     } else {
         foreach ($rows as $row) {
             echo pad($row['bug'], 7) . ' | ' . pad($row['title'], 38) . ' | '
-                . pad($row['severity'], 8) . ' | ' . pad($row['status'], 11) . ' | '
+                . pad($row['priority'], 8) . ' | ' . pad($row['status'], 11) . ' | '
                 . $row['assignee'] . PHP_EOL;
         }
     }
@@ -52,17 +52,21 @@ try {
     $tests = [];
 
     $tests['FK: несуществующий проект'] = $hasUser2
-        ? "INSERT INTO bugs (project_id, reporter_id, title, severity) VALUES (99, 2, 'Тест', 'Minor')"
+        ? "INSERT INTO bugs (project_id, author_id, title, priority) VALUES (99, 2, 'Тест', 'Low')"
         : null;
 
     $tests['CHECK: неверная роль'] =
         "INSERT INTO users (full_name, email, password_hash, role) VALUES ('Тест', 'x@bh.local', 'h', 'boss')";
 
+    $tests['CHECK: неверный приоритет'] = ($hasProject1 && $hasUser2)
+        ? "INSERT INTO bugs (project_id, author_id, title, priority) VALUES (1, 2, 'Тест', 'Urgent')"
+        : null;
+
     $tests['UNIQUE: повторный e-mail'] =
         "INSERT INTO users (full_name, email, password_hash, role) VALUES ('Тест', 'tester@bh.local', 'h', 'tester')";
 
     $tests['NOT NULL: дефект без заголовка'] = ($hasProject1 && $hasUser2)
-        ? "INSERT INTO bugs (project_id, reporter_id, title, severity) VALUES (1, 2, NULL, 'Minor')"
+        ? "INSERT INTO bugs (project_id, author_id, title, priority) VALUES (1, 2, NULL, 'Low')"
         : null;
 
     foreach ($tests as $name => $sql) {
