@@ -107,7 +107,9 @@ function pageHeader(string $title): void
         .links a { margin-right: 1em; }
         form.auth { max-width: 360px; }
         form.auth label { display: block; margin: .8em 0 .2em; }
-        form.auth input, form.auth select { width: 100%; padding: 6px; box-sizing: border-box; }
+        form.auth input, form.auth select, form.auth textarea { width: 100%; padding: 6px; box-sizing: border-box; font: inherit; }
+        td.actions a { margin-right: .6em; }
+        td.actions form { display: inline; }
         form.auth button { margin-top: 1em; padding: 8px 16px; }
         .errors { color: #a40000; background: #fde8e8; padding: 8px 12px; max-width: 336px; }
         .errors p { margin: 4px 0; }

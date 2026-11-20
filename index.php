@@ -71,6 +71,7 @@ function renderTable(string $title, array $rows): void
         </form>
     </div>
     <p class="links">
+        <a href="projects.php">Проекты</a>
         <a href="index.php">Обновить</a>
         <a href="init_db.php">init_db.php</a>
         <a href="check.php">check.php</a>
