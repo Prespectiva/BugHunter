@@ -16,8 +16,30 @@ const PRIORITIES = [
     'Low'      => 'Low — незначительный дефект',
 ];
 
-/** Статус: текущий этап работы над ошибкой. */
-const STATUSES = ['Open', 'In Progress', 'Closed'];
+/** Статус: текущий этап работы над ошибкой (обновлено для ПР №6). */
+const STATUSES = ['New', 'Review', 'Confirmed', 'In Progress', 'Fixed', 'Closed', 'Rejected'];
+
+/** Машина состояний: из какого статуса в какие можно перейти. Любой другой переход запрещён. */
+const TRANSITIONS = [
+    'New'         => ['Review'],
+    'Review'      => ['Confirmed', 'Rejected'],
+    'Confirmed'   => ['In Progress'],
+    'In Progress' => ['Fixed'],
+    'Fixed'       => ['Closed', 'In Progress'],
+];
+
+/** Матрица доступа: какие переходы разрешены роли (admin может любые допустимые, customer — никаких). */
+const ROLE_TRANSITIONS = [
+    'tester'    => [
+        'New'    => ['Review'],
+        'Review' => ['Confirmed', 'Rejected'],
+        'Fixed'  => ['Closed', 'In Progress'],
+    ],
+    'developer' => [
+        'Confirmed'   => ['In Progress'],
+        'In Progress' => ['Fixed'],
+    ],
+];
 
 function priorityBadge(string $p): string
 {
@@ -85,6 +107,50 @@ function canEditBug(array $user, array $bug): bool
     return $user['role'] === 'admin'
         || (int) $bug['author_id'] === $uid
         || ($bug['assignee_id'] !== null && (int) $bug['assignee_id'] === $uid);
+}
+
+/** Статусы, в которые пользователь может перевести ошибку из текущего статуса (с учётом роли). */
+function allowedNextStatuses(array $user, string $status): array
+{
+    $graph = TRANSITIONS[$status] ?? [];
+    if ($user['role'] === 'admin') {
+        return $graph;
+    }
+    $byRole = ROLE_TRANSITIONS[$user['role']][$status] ?? [];
+    return array_values(array_intersect($graph, $byRole));
+}
+
+/**
+ * Смена статуса: UPDATE bugs и INSERT в bug_history выполняются в одной транзакции.
+ * Условие AND status = ? защищает от гонки: если статус уже изменили, UPDATE ничего не заденет.
+ */
+function changeBugStatus(int $bugId, string $old, string $new, int $userId): bool
+{
+    $pdo = getPdo();
+    try {
+        $pdo->beginTransaction();
+
+        $upd = $pdo->prepare('UPDATE bugs SET status = ? WHERE bug_id = ? AND status = ?');
+        $upd->execute([$new, $bugId, $old]);
+        if ($upd->rowCount() !== 1) {
+            $pdo->rollBack();
+            return false;
+        }
+
+        $hist = $pdo->prepare(
+            "INSERT INTO bug_history (bug_id, user_id, old_status, new_status, created_at)
+             VALUES (?, ?, ?, ?, datetime('now'))"
+        );
+        $hist->execute([$bugId, $userId, $old, $new]);
+
+        $pdo->commit();
+        return true;
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
 }
 
 /** Список существующих проектов для выбора. */
@@ -156,9 +222,6 @@ function validateBug(array $d, bool $isEdit): array
     }
 
     if ($isEdit) {
-        if (!in_array($d['status'], STATUSES, true)) {
-            $errors[] = 'Некорректный статус.';
-        }
         if ($d['assignee_id'] !== '') {
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE user_id = ? AND role IN ('developer', 'admin')");
             $stmt->execute([ctype_digit($d['assignee_id']) ? (int) $d['assignee_id'] : 0]);
@@ -221,12 +284,9 @@ function bugForm(string $action, array $d, string $button, bool $isEdit): void
         </div>
         <?php if ($isEdit): ?>
         <div>
-            <label for="status">Статус</label>
-            <select id="status" name="status">
-                <?php foreach (STATUSES as $s): ?>
-                    <option value="<?= h($s) ?>" <?= $d['status'] === $s ? 'selected' : '' ?>><?= h($s) ?></option>
-                <?php endforeach; ?>
-            </select>
+            <label>Статус</label>
+            <div style="padding:6px 0"><b><?= h($d['status']) ?></b></div>
+            <div class="muted">Статус меняется кнопками в карточке ошибки.</div>
         </div>
         <?php endif; ?>
     </div>

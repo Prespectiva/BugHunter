@@ -109,6 +109,7 @@ function pageHeader(string $title): void
     <nav>
         <a href="bugs.php"<?= $active('bug') ?>>Ошибки</a>
         <a href="projects.php"<?= $active('project') ?>>Проекты</a>
+        <a href="dashboard.php"<?= $active('dashboard') ?>>Dashboard</a>
         <!-- Ссылка на "Таблицы" удалена -->
     </nav>
     <div class="me">
